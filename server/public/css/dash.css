@@ -1,0 +1,32 @@
+body {
+    height: 100%;
+    background: rgba(30, 30, 63, 0.88);
+
+}
+
+
+a {
+    color: white !important;
+}
+
+.circle {
+    padding: 25px !important;
+    background: #1e1e3f;
+    font-family: Operator Mono SSm A, Operator Mono SSm B, Consolas, monospace;
+
+    border-radius: 10px !important;
+}
+
+
+input, textarea {
+    scrollbar-width: none !important;
+    color: #c9feff !important;
+    border: none !important;
+    width: 100% !important;
+    background: #1e1e3f !important;
+}
+
+textarea {
+    min-height: 100px !important;
+
+}

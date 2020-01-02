@@ -1,0 +1,235 @@
+<link rel="stylesheet" href="/css/bs.css">
+<link rel="stylesheet" href="/css/animate.css">
+<script src="/css/jquery.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<style>
+    body {
+        height: 100%;
+        background: rgba(30, 30, 63, 0.88);
+
+    }
+
+
+    a {
+        color: white !important;
+    }
+
+    .circle {
+        padding: 25px !important;
+        background: #1e1e3f;
+        font-family: Operator Mono SSm A, Operator Mono SSm B, Consolas, monospace;
+
+        border-radius: 10px !important;
+    }
+
+
+    input, textarea {
+        scrollbar-width: none !important;
+        color: #c9feff !important;
+        border-radius: 2px !important;
+        background: #1e1e3f !important;
+    }
+
+</style>
+
+<nav class="navbar navbar-dark " style="height:40px;display: flex;">
+
+    <a style="background: #1e1e3f;border-radius: 19px;padding: 10px;" class="navbar-brand" href="#">
+        WR Notes
+    </a>
+    <div class="navbar-right">
+        <div id="progress" class="btn badge rounded bg-dark"><img id="image" src="/assets/tick.png"
+                                                                  style="width: 25px;height: 25px;"/>
+        </div>
+        <div class="btn btn-dark" onclick="window.location='/dash/logout'">Logout</div>
+    </div>
+</nav>
+<div id="edit_box" class="col-md-3 card form-group circle"
+     style="padding: 10px;margin-left:40%;margin-top:10px;">
+    <input title="description" id="title" class="form-control" placeholder="Enter Title..."
+           type="text"
+           autocomplete="off"
+           data-toggle="modal" data-target="#exampleModalCenter"
+           style="width: 100%;border:none;"/>
+    <div id="desc_box" style="display: none;">
+        <hr>
+        <textarea title="title" data="" id="description" class="form-control"
+                  placeholder="Enter Description..."
+                  style="width: 100%;border:none;display: inline;">
+    </textarea>
+
+    </div>
+</div>
+<hr>
+<div id="notes" class="row" style="margin-left: 60px;">
+    <% for (var i = 0; i < data.length ; i++) {
+        var note = data[i]; %>
+    <div class="col-md-3 card circle" style="margin-left: 15px;margin-top: 4px;">
+        <input title="description_<%= i %>" id="title_<%= i %>" class="form-control"
+               data-toggle="modal" data-target="#exampleModalCenter"
+               value="<%= note.title %>"
+               type="text" style="width: 100%;border:none;"/>
+        <hr>
+        <% var isPass = note.title.toLowerCase().includes("password") || note.title.toLowerCase().includes("secret") %>
+        <textarea title="title_<%= i %>" data="<%= note._id %>"
+                  data-toggle="modal" data-target="#exampleModalCenter"
+                  id="description_<%= i %>"
+                  class="form-control"
+                  style="<%= isPass ? "display: none;" : "" %> width: 100%;border:none;height: 80px;"><%= note.desc %></textarea>
+    </div>
+    <% } %>
+</div>
+
+<div id="note" class="col-md-3 card circle"
+     style="display:none;margin-left: 15px;padding: 10px;margin-top: 4px;">
+    <input title="description_" id="title_" class="form-control" type="text"
+           style="width: 100%;border:none;"/>
+    <div id="desc_box">
+        <hr>
+        <textarea title="title_" id="description_" class="form-control"
+                  style="width: 100%;border:none;display: inline;"></textarea>
+    </div>
+</div>
+
+
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
+     aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div id="note" class="col-md-12 card circle" style="">
+                <input placeholder="Enter Title..." title="add_desc" id="add_title"
+                       class="form-control" type="text" style="width: 100%;border:none;"/>
+                <div id="desc_box">
+                    <hr>
+                    <textarea placeholder="Enter Description..." title="add_title" id="add_desc"
+                              class="form-control"
+                              style="width: 100%;border:none;display: inline;"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<% include footer.ejs %>
+<script>
+
+    $('#exampleModalCenter').on('show.bs.modal hide.bs.modal', function (e) {
+        if (e.type === "show") {
+
+        } else {
+
+        }
+    })
+
+    const desc = document.getElementById("desc_box");
+    const title = document.getElementById("title");
+    const desc1 = document.getElementById("description");
+    let isUpdatePending = false, taskPending = false, pending = false;
+    let ldesc, ltitle, ldata, _title, _desc;
+
+    function addData(id) {
+        const box = document.getElementById("notes");
+        const x = document.getElementById("note");
+        const x1 = x.cloneNode(true);
+        x1.children[0].value = _title;
+        x1.children[1].children[1].value = _desc;
+        x1.children[1].children[1].setAttribute("data", id)
+        x1.style.display = "block"
+        animateCSS("#edit_box", "rotateOutUpLeft", () => {
+            desc.style.display = "none"
+            box.insertBefore(x1, box.childNodes[0]);
+            x1.classList.add("animated", "rotateInUpRight")
+        })
+    }
+
+    function pushData() {
+
+        if (document.getElementById(ldesc).value.trim() !== "") {
+            document.getElementById("image").src = "/assets/progress.gif";
+            taskPending = true;
+            let nodeX = document.getElementById(ldesc).parentNode
+            _title = document.getElementById(ltitle).value
+            _desc = document.getElementById(ldesc).value
+            if (_title.toLowerCase().includes("password") || _title.toLowerCase().includes("secret"))
+                document.getElementById(ldesc).style.display = "none"
+            else document.getElementById(ldesc).style.display = "inline"
+            $.post("/dash/notes/add", {
+                    title: _title,
+                    desc: _desc,
+                    key: ldata
+                },
+                function (data) {
+                    taskPending = false;
+                    if (data.success) {
+                        document.getElementById("image").src = "/assets/tick.png";
+                        if (_title === "DEL" || _title === "DELETE") {
+                            nodeX.id = "a4r24r"
+                            animateCSS("#a4r24r", "rollOut", () => {
+                                document.getElementById("notes")
+                                    .removeChild(nodeX);
+                            })
+                            alertify.error("Note Deleted !");
+                        } else if (ldata.trim() === "") {
+                            alertify.success("Note added successfully !")
+                            title.value = ""
+                            desc1.value = ""
+                            addData(data.id)
+                        } else {
+                            alertify.success("Note updated successfully !")
+                            nodeX.classList.add("animated", "zoomInDown")
+                            nodeX.addEventListener('animationend', () => {
+                                nodeX.classList.remove("animated", "zoomInDown")
+                            })
+
+                        }
+                    } else {
+                        alertify.error("Something went wrong !")
+                        document.getElementById("image").src = "/assets/cross.png";
+
+                    }
+                }
+            );
+        } else desc.style.display = "none"
+    }
+
+    $("#title").on("keyup change", (e) => {
+        if (e.type === "change") desc1.value = ""
+        else {
+            if (e.target.value.trim() !== "") {
+                animateCSS("#desc_box", 'fadeIn')
+                desc.style.display = "block";
+            } else desc.style.display = "none"
+        }
+    })
+
+
+    $('body').click((e) => {
+        if (e.target.id !== ldesc && e.target.id !== ltitle && isUpdatePending) {
+            isUpdatePending = false;
+            pushData()
+        }
+    }).on("change keyup", 'textarea', (e) => {
+        if (e.type === "keyup") {
+            ldesc = e.target.id
+            ltitle = e.target.title
+            ldata = e.target.getAttribute("data")
+        } else isUpdatePending = true
+    })
+        .on("change keyup", 'input', (e) => {
+            if (e.target.id === "title") {
+            } else if (e.type === "keyup") {
+                ltitle = e.target.id
+                ldesc = e.target.title
+                ldata = document.getElementById(ldesc).getAttribute("data")
+            } else isUpdatePending = true
+
+        })
+
+    window.onbeforeunload = confirmExit;
+
+    function confirmExit() {
+        if (taskPending) {
+            return "Some task is in progress. Are you sure, you want to close?";
+        }
+    }
+</script>
