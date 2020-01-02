@@ -17,7 +17,7 @@ https://wrnotes.live
 ## For Cli(PYTHON) 
   [Visit Here](https://github.com/wisdomrider/WR-Notes/tree/master/clipython)
 
-## For Chrome/Firefox Extension(JS) 
+## For Chrome/Firefox Extension(JS) (Coming Soon.)
   [Visit Here](https://github.com/wisdomrider/WR-Notes/tree/master/ext)
     
 Thanks !
