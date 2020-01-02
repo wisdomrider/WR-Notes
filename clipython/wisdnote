@@ -1,0 +1,238 @@
+#!/usr/bin/env python3
+import os,sys,colorama,subprocess,getpass,threading,requests,json
+from time import sleep
+from pathlib import Path
+from colorama import Style,Fore
+
+BASE_URL="https://notes.wisdomriderr.shop/api/web/"
+#BASE_URL="http://localhost:3000/api/web/"
+args=sys.argv
+title="Loading : "
+lists=[]
+def colored(color, s):
+    return Style.BRIGHT + color + s + Style.RESET_ALL
+
+taskFinished=False
+
+
+
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█'):
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+def checkForAuth(x):
+    if  x.status_code==406:
+        print("Session is expired. Please relogin.") 
+        sys.exit(0)
+
+def filterSecrets(list):
+    filteredList=[]
+    for x in list["data"]:
+        if "secret" in x["title"] or "password" in x["title"]:
+            x["desc"]="".join(["*" for x in range(len(x["desc"]))])
+            filteredList.append(x);
+        else :
+            filteredList.append(x);
+    return {"data":filteredList};
+
+
+def parseCommands():
+    thread=threading.Thread(target=loading)
+    global taskFinished,title
+    if len(args)==2:
+        if args[1]=="list":
+            title="Fetching :"
+            thread.start()
+            list=requests.get(BASE_URL+"notes",
+            headers={'authorization': "Bearer " + os.popen("cat ~/.wsession").read()[:-1]})
+            taskFinished=True
+            sleep(0.2)
+            checkForAuth(list)
+            list=filterSecrets(list.json())
+            showList(list)
+        elif args[1]=="login":
+            first(True)
+        elif args[1]=="add":
+            t=input("Enter title of note -> ")
+            desc=LongInput("Enter description of note (ctrl+c to stop) -> ")
+            addNote(t,desc,thread)
+        elif args[1]=="edit":
+            tag=input("Enter tag to edit -> ")
+            showList(search(tag),edit=True)
+            editOperations(thread)
+        elif args[1]=="search":
+            tag=input("Enter tag to search -> ")
+            showList(search(tag))
+        elif args[1]=="delete":
+            tag=input("Enter tag to delete -> ")
+            showList(search(tag),edit=True)
+            deleteOperation(thread)
+        elif args[1]=="register":
+            os.system("xdg-open https://notes.wisdomriderr.shop")
+            print("Please register from Here.")
+        else:
+            help()
+    elif len(args)==4 and args[1]=="add":
+       addNote(args[2],args[3],thread)
+    elif len(args)==3 and args[1]=="search":
+        showList((search(args[2])))
+    elif len(args)==3 and args[1]=="edit":
+        showList(search(args[2]),edit=True)
+        editOperations(thread)
+    elif len(args)==3 and args[1]=="delete":
+        showList(search(args[2]),edit=True)
+        deleteOperation(thread)
+    else:
+        help()
+
+def deleteOperation(thread):
+    global lists,title,taskFinished
+    try:
+        choose=int(input("Choose a number to delete -> "))-1
+        if choose<0:
+            raise Error("a")
+        title="DELETE : "
+        thread.start()
+        edit=requests.post(BASE_URL+"delete/note/"+lists[choose],
+            headers={'authorization': "Bearer " + os.popen("cat ~/.wsession").read()[:-1]})
+        taskFinished=True
+        sleep(0.2)
+        checkForAuth(edit)
+        print("Deleted Succesfully .") if edit.status_code==200 else print("Something went wrong.")
+    except:
+            print("Choose a appropriate item and try again ")
+
+
+
+def search(tag):
+    search=requests.post(BASE_URL+"search/"+tag,
+    headers={'authorization': "Bearer " + os.popen("cat ~/.wsession").read()[:-1]})
+    checkForAuth(search)
+    os.system("sudo -v") if "secret" in str(search.json()) or "password" in str(search.json()) else ()
+    return search.json()        
+
+
+def editOperations(thread):
+    global title,lists,taskFinished
+    try:
+        choose=int(input("Choose a number to edit -> "))-1
+        if choose<0:
+            raise Error("a")
+        tt=input("Title -> ")
+        desc=LongInput("Desc (ctrl+c) to stop -> ")
+        title="Updating : "
+        thread.start()
+        edit=requests.post(BASE_URL+"edit/note/"+lists[choose],
+            data={'title':tt,'desc':desc},
+            headers={'authorization': "Bearer " + os.popen("cat ~/.wsession").read()[:-1]}
+            )
+        taskFinished=True
+        sleep(0.2)
+        checkForAuth(edit)
+        print("Updated Succesfully .") if edit.status_code==200 else print("Something went wrong.")
+    except:
+        print("Choose a appropriate item and try again ")
+
+def showList(content,clear=True,edit=False):
+    if not content["data"]:
+        print(colored(Fore.RED,"No Notes Found !"))
+        sys.exit(0)
+    global lists
+    if clear:
+        os.system("clear")
+    c=0
+    print("----------------------------------------------------------")   
+    for x in content["data"]:
+        lists.append(x["_id"])
+        if edit:
+            print("("+colored(Fore.YELLOW,str(c+1))+")")
+        print(colored(Fore.GREEN,x["title"]))
+        print(colored(Fore.CYAN,x["desc"]))
+        print("----------------------------------------------------------")
+        c+=1
+
+def addNote(tt,desc,t):
+    global title,taskFinished
+    title="Adding : "
+    t.start()
+    login=requests.post(BASE_URL+"add/note",
+    data={'title':tt,'desc':desc},
+    headers={'authorization': "Bearer " + os.popen("cat ~/.wsession").read()[:-1]})
+    taskFinished=True
+    sleep(0.2)
+    checkForAuth(login)
+    print("Added Succesfully .") if login.status_code==200 else print("Something went wrong.")
+    
+
+def LongInput(name):
+    print(name)
+    contents = []
+    while True:
+        try:
+            line = input()
+            contents.append(line)
+        except KeyboardInterrupt:
+            break
+    return  '\n'.join(contents)
+
+
+def first(rL=False):
+    global taskFinished,title
+    if len(args)==2 and args[1]=="login" and not rL:
+        parseCommands()
+    elif len(args)==2 and args[1]=="update" and not rL:
+        os.system("xdg-open https://github.com/wisdomrider/NotesForLinux")
+    elif os.path.isfile(str(Path.home())+"/.wsession") and not rL:
+        parseCommands()
+    else :
+        if not rL:
+            print(colored(Fore.RED,"        You are not Logged in !"))
+        username=input(colored(Fore.GREEN,"Enter your username")+" -> ")
+        password=getpass.getpass(colored(Fore.RED,"Enter your password")+" -> ")
+        title="LoggingIn : "
+        loadThread=threading.Thread(target=loading)
+        loadThread.start()
+        login=requests.post(BASE_URL+"login",data={'username':username,'password':password})
+        taskFinished=True
+        sleep(0.2)
+        if login.status_code==406 :
+            print(colored(Fore.RED,"Username/Password not matched . Do you want to retry (Y/N)"))
+            first() if input().lower()=="y" else ()
+
+        else:
+            cont=json.loads(login.content)
+            f=open(str(Path.home())+"/.wsession","w")
+            f.write(cont["data"]["key"]+" ")
+            f.close()
+            if len(args)>1 and not rL:
+                first()
+            else:
+                print("Login Successful !")
+    
+def loading():
+    global taskFinished,title
+    items = list(range(0, 67))
+    l = len(items)
+    printProgressBar(0, l, prefix = title, suffix = 'Complete', length = 50)
+    for i, item in enumerate(items):
+        if not taskFinished:
+            sleep(0.2)
+        printProgressBar(i + 1, l, prefix = title, suffix = 'Complete', length = 50)
+    if not taskFinished:
+         print("\r")
+         loading()
+    taskFinished=False 
+
+def help():
+    print("Welcome to WisdNotes !")
+    print("Usage : wisdnotes [add <title> <desc>] [list] [add] [edit <searchQuery>] [edit] [delete <searchQuery>] [search <searchQuery>]"
+    +" [login] [help] \n \n Examples : \n 1. wisdnote login [to login]\n 2. wisdnote add tabletPassword nepal"+
+        "\n 3. wisdnote list [fetch all list]\n 4. wisdnote search tabletPassword\n\nNote : Passwords,Secrets are not shown in lists if you want to see your"
+            +" password then search it and sudo permission will be asked for that.\n If you add password,secret keyword in title then it will be encrypted automatically."
+            )
+
+first()
