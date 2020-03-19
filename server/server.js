@@ -8,6 +8,8 @@ const express = require('express')
     utils = require("./app/Utils").data,
     mongoose = require("mongoose");
 
+require("dotenv").config();
+
 app.use(cookie());
 app.use(express.urlencoded());
 app.use(express.json());
@@ -76,9 +78,10 @@ app.use(function (err, req, res, next) {
     res.render('error', {
         error: err
     });
+    //asdad
 });
 
-app.listen(process.env.PORT || 8080, () => {
+app.listen(process.env.PORT || 8280, () => {
     console.log("listerning");
 });
 

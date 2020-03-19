@@ -1,11 +1,7 @@
 FROM node
-# Create app directory
-WORKDIR /usr/src/app
-# Install app dependencies
-COPY package*.json ./
+WORKDIR /app
+COPY package.json /app
 RUN npm install
-# Copy app source code
-COPY . .
-#Expose port and start application
+COPY . /app
 EXPOSE 8080
 CMD [ "npm", "start" ]
