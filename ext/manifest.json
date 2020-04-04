@@ -1,0 +1,32 @@
+{
+  "description": "For syncing  texts in api",
+  "manifest_version": 2,
+  "name": "WR-Notes Extension",
+  "version": "1.0",
+  "icons": {
+    "32": "img/icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "index.js"
+      ]
+    }
+  ],
+  "browser_action": {
+    "default_icon": "img/icon.png",
+    "default_title": "Kivia",
+    "default_popup": "index.html"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "permissions": [
+    "<all_urls>"
+  ]
+}
