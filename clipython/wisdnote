@@ -4,7 +4,7 @@ from time import sleep
 from pathlib import Path
 from colorama import Style,Fore
 
-BASE_URL="https://notes.wisdomriderr.shop/api/web/"
+BASE_URL="https://wisdnotes.herokuapp.com/api/web/"
 #BASE_URL="http://localhost:3000/api/web/"
 args=sys.argv
 title="Loading : "
